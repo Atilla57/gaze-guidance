@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puzzle-Spiel</title>
+    <link rel="stylesheet" href="../css/puzzle.css">
+</head>
+<body>
+    <div id="overlay"></div> <!-- 🔹 Das Overlay muss vorhanden sein -->
+    <header>
+        <h1>Spiel 2: Puzzle</h1>
+        <!-- Lösungsbild -->
+        <div id="solution-image"></div>
+        <!-- Timer -->
+        <p>Füge die Puzzleteile auf der rechten Seite richtig zusammen!<br> 
+        Du kannst auch auf das Lösungsbild für den Vollbildmodus klicken!
+        <p id="timer">Zeit: 00:00</p>
+    </header>
+   
+    <main>
+        <!-- Puzzle-Teile -->
+        <div id="puzzle-pieces"></div>
+        <!-- Bereich für den Puzzle-Rahmen -->
+        <div id="puzzle-frame"></div>
+    </main>
+
+    <a href="../startpage.html" id="back-link">Zurück zur Spielauswahl</a>
+    
+  
+<!-- Overlay für das große Lösungsbild -->
+<div id="image-overlay">
+    <div class="overlay-content">
+        <span id="close-overlay">&times;</span>
+        <img id="overlay-image" src="" alt="Lösungsbild">
+    </div>
+</div>
+    <script src="../webgazer/www/js/calibration.js"></script> <!-- Blickdatenaufzeichnung -->
+    <script src="../js/puzzle.js"></script>
+</body>
+</html>

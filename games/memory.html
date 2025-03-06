@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory-Spiel</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/memory.css">
+</head>
+<body> 
+    <header>
+    <div style="display:block; text-align:left; float:left;">Memory-Spiel - Finde die passenden Kartenpaare!</div>
+    <div style="display:block; text-align:right;">Gefundene Paare: <span id="matchedPairCounter"></span> 
+        (von insgesamt <span id="cards_length"></span> Paaren)</div>
+    </header>
+
+    <!-- Spielfeld -->
+    <main>
+        <div id="memory-game" class="game-board"></div>
+    </main>
+
+    
+    <footer>
+        <a href="../startpage.html">Zurück zur Spielauswahl</a>
+    </footer>
+
+    <!--Javascript Memory-->
+    <script src="../webgazer/www/js/calibration.js"></script> <!-- Blickdatenaufzeichnung -->
+    <script src="../js/memory.js"></script>
+    
+</body>
+</html>

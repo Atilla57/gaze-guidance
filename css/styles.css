@@ -1,0 +1,86 @@
+/* Allgemeine Seiteinstellungen */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: rgb(39, 76, 145);
+    text-align: center;
+    color: white;
+    font-size: 1.2vw;
+}
+
+header {
+    background-color: #282696;
+    color: white;
+    padding: 20px 0;
+    font-size: 0.75rem;
+    margin-bottom: 1vw;
+}
+
+footer {
+    margin-top: 20px;
+    color: #666;
+    font-size: 0.9rem;
+    margin-top: 1vw;
+}
+
+form {
+    font-size: 1.5vw;
+}
+
+form label {
+    margin-top: 1vw;
+    display: inline-block;
+}
+
+
+/* Spielauswahl Startseite */
+.spielauswahl {
+    display: flex;
+    justify-content: space-between;
+    width: 100%
+}
+
+a {
+    color: black;
+}
+
+
+.box {
+    background-color: #75acd8;
+    border: 1px solid #000;
+    padding: 20px;
+    text-align: center;
+    flex: 1;
+    margin: 10px;
+    margin-top: 10vw;
+}
+.box:hover {
+    background-color: red;
+    color: green;
+}
+
+
+/* Button */
+
+    button {
+        background-color: red; /* Grüner Hintergrund */
+        color: white; /* Weiße Schrift */
+        padding: 12px 24px;
+        font-size: 16px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+        margin-top: 4vw;
+    }
+
+    button:hover {
+        background-color: #00ccff; /* Dunklerer Grünton beim Hover */
+        transform: scale(1.05); /* Leichte Vergrößerung */
+        color: black;
+    }
+
+    button:active {
+        transform: scale(0.95); /* Leichtes Schrumpfen beim Klicken */
+    }

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Spielauswahl - Gaze Guidance Studie</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header>
+        <h1>Gaze Guidance Studie</h1>
+        <p>Bitte gib zuerst deinen Namen und dein Alter ein</p>
+        <p>Anschließend wirst du nacheinander die Spiele Memory, Puzzle und Dame spielen.<br>
+            Nach jedem Spielabschluss wirst du automatisch zum nächsten Spiel geleitet. <br>
+            Viel Spaß beim Spielen! </p>
+    </header>
+
+    <main>
+        <form id="probandenForm">
+            <label for="vorname">Vorname:</label>
+            <input type="text" id="vorname" name="vorname" required> &nbsp; &nbsp; &nbsp; &nbsp;
+            
+            <label for="nachname">Nachname:</label>
+            <input type="text" id="nachname" name="nachname" required> &nbsp; &nbsp; &nbsp; &nbsp;
+            
+            <label for="alter_jahr">Alter:</label>
+            <input type="number" id="alter_jahr" name="alter_jahr" required min="1"> 
+            <br>
+            <button type="button" onclick="submitForm()">Probanden-Daten speichern</button>
+        </form>
+        <p id="responseMessage"></p>
+        
+        <div class="spielauswahl">
+            <div class="box">
+                <a href="../gaze-guidance/games/memory.html">Memory</a>
+            </div>
+            <div class="box">
+                <a href="../gaze-guidance/games/puzzle.html">Puzzle</a>
+            </div>
+            <div class="box">
+                <a href="../gaze-guidance/games/tictactoe.html">Tic-Tac-Toe</Tic-Tac-Toe></a>
+            </div>
+        </div>
+    </main>
+    <script>
+        window.addEventListener('load', function () {
+            console.log("🗑️ Startseite geladen – Probanden-ID wird zurückgesetzt.");
+            localStorage.removeItem('probanden_id');
+        });
+
+    function submitForm() {
+    const formData = new FormData(document.getElementById('probandenForm'));
+
+    fetch('db/insert_proband.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json()) // Antwort als JSON verarbeiten
+    .then(data => {
+        if (data.status === "success") {
+            localStorage.setItem('probanden_id', data.probanden_id);  
+            console.log(`✅ Neue Probanden-ID gespeichert: ${data.probanden_id}`);
+
+            setTimeout(() => {
+                const storedId = localStorage.getItem('probanden_id');
+                if (storedId) {
+                    window.location.href = '../gaze-guidance/games/memory.html';
+                } else {
+                    console.error("❌ Fehler: Neue Probanden-ID konnte nicht gespeichert werden!");
+                }
+            }, 500);  // Warte 500ms, um sicherzustellen, dass die ID gespeichert wird
+        } else {
+            document.getElementById('responseMessage').innerHTML = "Fehler: " + data.message;
+        }
+    })
+    .catch(error => {
+        console.error('❌ Fehler:', error);
+    });
+}
+
+    </script>
+</body>
+</html>
