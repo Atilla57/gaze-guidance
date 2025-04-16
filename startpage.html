@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Spielauswahl - Gaze Guidance Studie</title>
     <link rel="stylesheet" href="css/styles.css">
+    <script src= "js/guidance-config.js"></script>
 </head>
 <body>
     <header>
@@ -23,9 +24,9 @@
             <input type="text" id="nachname" name="nachname" required> &nbsp; &nbsp; &nbsp; &nbsp;
             
             <label for="alter_jahr">Alter:</label>
-            <input type="number" id="alter_jahr" name="alter_jahr" required min="1"> 
+            <input type="number" id="alter_jahr" name="alter_jahr" required min="1" max="120"> 
             <br>
-            <button type="button" onclick="submitForm()">Probanden-Daten speichern</button>
+            <button type="button" onclick="submitForm()">Probanden-Daten Speichern & Spiel Beginnen</button>
         </form>
         <p id="responseMessage"></p>
         
@@ -37,7 +38,7 @@
                 <a href="../gaze-guidance/games/puzzle.html">Puzzle</a>
             </div>
             <div class="box">
-                <a href="../gaze-guidance/games/tictactoe.html">Tic-Tac-Toe</Tic-Tac-Toe></a>
+                <a href="../gaze-guidance/games/tictactoe.html">Tic-Tac-Toe</a>
             </div>
         </div>
     </main>
@@ -45,10 +46,35 @@
         window.addEventListener('load', function () {
             console.log("🗑️ Startseite geladen – Probanden-ID wird zurückgesetzt.");
             localStorage.removeItem('probanden_id');
+            localStorage.removeItem('gaze_guidance_config');
         });
+        
 
     function submitForm() {
+
+    // 🧪 Eingabewerte auslesen
+    const vorname = document.getElementById("vorname").value.trim();
+    const nachname = document.getElementById("nachname").value.trim();
+    const alter = document.getElementById("alter_jahr").value.trim();
+
+    // 🚫 Prüfen, ob ein Feld leer ist
+    if (!vorname || !nachname || !alter) {
+        alert("Bitte alle Felder ausfüllen, bevor du fortfährst! Es darf nichts leer sein");
+        return; // ⛔️ Formular nicht absenden
+    }
+
+
     const formData = new FormData(document.getElementById('probandenForm'));
+
+    const accuracy = localStorage.getItem('calibration_accuracy');
+
+    // Bildschirmauflösung hinzufügen
+    const screenWidth = window.screen.width;
+    const screenHeight = window.screen.height;
+    const resolution = `${screenWidth}x${screenHeight}`;
+    formData.append('screen_resolution', resolution);  // 🆕
+    formData.append('accuracy', accuracy);
+    console.log(accuracy);
 
     fetch('db/insert_proband.php', {
         method: 'POST',
@@ -59,6 +85,7 @@
         if (data.status === "success") {
             localStorage.setItem('probanden_id', data.probanden_id);  
             console.log(`✅ Neue Probanden-ID gespeichert: ${data.probanden_id}`);
+
 
             setTimeout(() => {
                 const storedId = localStorage.getItem('probanden_id');

@@ -14,33 +14,10 @@ $playTime = isset($data['playTime']) ? (int)$data['playTime'] : 0;
 $probanden_id = isset($data['probanden_id']) ? (int)$data['probanden_id'] : null;
 
 // Tabelle validieren
-$validTables = ['memory_game', 'puzzle_game', 'tictactoe_game', 'gaze_guidance_events'];
+$validTables = ['memory_game', 'puzzle_game', 'tictactoe_game'];
 if (!in_array($table, $validTables)) {
     echo "Ungültige Tabelle: $table";
     exit();
-}
-
-
-if ($table === 'memory_gaze_guidance') {
-    $memory_id    = (int)$data['memory_id'];
-    $probanden_id = (int)$data['probanden_id'];
-    $gameName     = $conn->real_escape_string($data['game_name']);
-    $moveNumber   = (int)$data['move_number'];
-    $posX         = (int)$data['gg_pos_x'];
-    $posY         = (int)$data['gg_pos_y'];
-
-    $sql = "INSERT INTO memory_gaze_guidance 
-                (memory_id, probanden_id, game_name, move_number, gg_pos_x, gg_pos_y)
-            VALUES
-                ($memory_id, $probanden_id, '$gameName', $moveNumber, $posX, $posY)";
-
-    if ($conn->query($sql) === TRUE) {
-        echo "✅ memory_gaze_guidance erfolgreich gespeichert!";
-    } else {
-        echo "❌ Fehler beim Einfügen von memory_gaze_guidance: " . $conn->error;
-    }
-    $conn->close();
-    exit(); 
 }
 
 
@@ -54,12 +31,52 @@ if ($table === 'tictactoe_game') {
     $zuganzahl = isset($data['zuganzahl']) ? $conn->real_escape_string($data['zuganzahl']) : "[]";
     $rundenzeiten = isset($data['rundenzeiten']) ? $conn->real_escape_string($data['rundenzeiten']) : "[]";
     $rundenzeit_insgesamt = isset($data['rundenzeit_insgesamt']) ? (int)$data['rundenzeit_insgesamt'] : 0;
+    
+    $gazeGuidanceMoves = isset($data['gazeGuidanceMoves'])
+    ? $conn->real_escape_string($data['gazeGuidanceMoves'])
+    : "[]";
+    $gazeGuidanceMethod = isset($data['gazeGuidanceMethod'])
+    ? $conn->real_escape_string($data['gazeGuidanceMethod'])
+    : "[]";
 
-    $sql = "INSERT INTO tictactoe_game (probanden_id, rundenanzahl, siege, unentschieden, verluste, zuganzahl, blickdaten, rundenzeiten, rundenzeit_insgesamt) 
-            VALUES ($probanden_id, $rundenanzahl, $siege, $unentschieden, $verluste, '$zuganzahl', '$gazeData', '$rundenzeiten', $rundenzeit_insgesamt)";
-} else {
-    // Standard SQL für Memory, Puzzle, Dame
-    $sql = "INSERT INTO $table (probanden_id, benötigte_zeit, blickdaten) VALUES ($probanden_id, $playTime, '$gazeData')";
+    $sql = "INSERT INTO tictactoe_game
+            (probanden_id, rundenanzahl, siege, unentschieden, verluste,
+            zuganzahl, blickdaten, rundenzeiten, rundenzeit_insgesamt, gaze_guidance_moves, gaze_guidance_method)
+VALUES
+  ($probanden_id, $rundenanzahl, $siege, $unentschieden, $verluste,
+   '$zuganzahl', '$gazeData', '$rundenzeiten', $rundenzeit_insgesamt,
+   '$gazeGuidanceMoves', '$gazeGuidanceMethod')";
+} else if ($table === 'memory_game') {
+    $gazeGuidanceMoves = isset($data['gazeGuidanceMoves'])
+        ? $conn->real_escape_string($data['gazeGuidanceMoves'])
+        : "[]";
+
+    $gazeData = isset($data['gazeData'])
+        ? $conn->real_escape_string($data['gazeData'])
+        : "[]";
+
+    $playTime = isset($data['playTime']) ? (int)$data['playTime'] : 0;
+
+    $gazeGuidanceMethod = isset($data['gazeGuidanceMethod'])
+        ? $conn->real_escape_string($data['gazeGuidanceMethod']): error;
+
+    $sql = "INSERT INTO memory_game
+               (probanden_id, benötigte_zeit, blickdaten, gaze_guidance_method, gaze_guidance_moves)
+            VALUES
+               ($probanden_id, $playTime, '$gazeData', '$gazeGuidanceMethod', '$gazeGuidanceMoves')";
+
+} else if ($table === 'puzzle_game') {
+    $gazeGuidanceMoves = isset($data['gazeGuidanceMoves'])
+        ? $conn->real_escape_string($data['gazeGuidanceMoves'])
+        : "[]";
+    $gazeGuidanceMethod = isset($data['gazeGuidanceMethod'])
+        ? $conn->real_escape_string($data['gazeGuidanceMethod'])
+        : "[]";
+    
+    $sql = "INSERT INTO puzzle_game
+               (probanden_id, benötigte_zeit, blickdaten, gaze_guidance_moves, gaze_guidance_method)
+            VALUES
+               ($probanden_id, $playTime, '$gazeData', '$gazeGuidanceMoves' , '$gazeGuidanceMethod')";
 }
 
 

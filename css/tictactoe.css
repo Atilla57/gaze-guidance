@@ -4,7 +4,7 @@
             grid-template-rows: repeat(5, 1fr);
             gap: 5px;
             margin: auto;
-            background-color: #ddd;
+            background-color: rgb(174, 173, 173);
             padding: 10px;
             width: 500px;
             height: 500px;
@@ -14,7 +14,7 @@
             display: flex;
             align-items: center;
             justify-content: center; 
-            background-color: white;
+            background-color: lightgrey;
             border: 2px solid black;
             cursor: pointer;
             width: 80px;
@@ -23,7 +23,7 @@
         }
        
         .cell:hover {
-            background-color: #f0f0f0;
+            background-color: lightgrey;
         }
 
         #game-container {
@@ -40,6 +40,6 @@
         }
 
         body {
-            background-color: black;
-            color: red;
+            background-color: rgb(174, 173, 173);
+            color: black;
         }

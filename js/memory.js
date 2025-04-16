@@ -8,7 +8,7 @@ const cards = [
     "../img/hard/2.jpg", "../img/hard/2.jpg",
     "../img/hard/3.jpg", "../img/hard/3.jpg",
     "../img/hard/4.jpg", "../img/hard/4.jpg",
-/*    "../img/hard/5.jpg", "../img/hard/5.jpg",
+    "../img/hard/5.jpg", "../img/hard/5.jpg",
     "../img/hard/6.jpg", "../img/hard/6.jpg",
     "../img/hard/7.jpg", "../img/hard/7.jpg",
     "../img/hard/8.jpg", "../img/hard/8.jpg",
@@ -38,7 +38,7 @@ const cards = [
     "../img/hard/grauerMond.jpg", "../img/hard/grauerMond.jpg",
     "../img/hard/kirsche.jpg", "../img/hard/kirsche.jpg",
     "../img/hard/orangene_Sonne.jpg", "../img/hard/orangene_Sonne.jpg",
-    "../img/hard/stern.jpg", "../img/hard/stern.jpg", */
+    "../img/hard/stern.jpg", "../img/hard/stern.jpg",
 ];
 
 // -------------------------------------
@@ -47,20 +47,28 @@ const cards = [
 let cards_pair_length = cards.length / 2;
 let openCards = [];
 let matchedPairs = 0;
-let isCheckingMatch = false; // Blockiert weitere Klicks während der Match-Prüfung
+let isCheckingMatch = false;
 
-// NEU: Gaze Guidance und Klick-Recorder Variablen
-let gazeGuidanceCards = [];
-let initialClicks = 0;
+let isTrueMove = false; // Standardwert setzen
+
+let currentGazeGuidanceMethod = window.GazeGuidanceConfig?.memory || "none";
+console.log("🎯 Gaze Guidance Methode für Memory:", currentGazeGuidanceMethod);
+
+
 let clickNumber = 0;
 let memoryClickLog = [];
+let GAZE_GUIDANCE_ENABLED = true;
+const GAZE_GUIDANCE_METHODS = ["rotation", "contrast", "border", "size"];
 
-// NEU: Zähler für Guidance
-let totalGuidanceCount = 0; // Zählt, wie viele Karten dauerhaft als Guidance markiert wurden
-let guidanceHits = 0;       // Zählt, wie oft der Spieler auf eine Guidance-Karte klickt
 
-// -------------------------------------
-// UI-/Info-Funktionen
+window.addEventListener("load", function () {
+    if (!document.fullscreenElement) {
+        checkFullscreenAndPrompt();
+
+    }
+  });
+  
+
 // -------------------------------------
 function updateCounter() {
     document.getElementById("matchedPairCounter").textContent = matchedPairs;
@@ -71,7 +79,7 @@ function updatePairLength() {
 }
 
 // -------------------------------------
-// Timer-Logik
+// Timer
 // -------------------------------------
 let startTime, timer;
 function startTimer() {
@@ -84,91 +92,78 @@ function startTimer() {
 
 function stopTimer() {
     clearInterval(timer);
-    
-    // NEU: Gib den Klick-Log und Guidance-Zähler aus
+
     console.log("Klick-Verlauf:", JSON.stringify(memoryClickLog, null, 2));
-    console.log(`Gesamt Guidance-Karten: ${totalGuidanceCount}, Guidance-Hits: ${guidanceHits}`);
-    
+
     window.parent.probanden_id = localStorage.getItem('probanden_id');
-    console.log(`🆕 NEUE Probanden-ID geladen: ${window.parent.probanden_id}`);
-    
-    if (!window.parent.probanden_id) {
-        console.error("Fehler: Probanden-ID konnte nicht gesetzt werden!");
-        return;
-    }
-    
+
+    window.parent.gameStats = {
+        table: "memory_game",
+        probanden_id: window.parent.probanden_id,
+        gazeGuidanceMethod: currentGazeGuidanceMethod,
+        gazeGuidanceMoves: JSON.stringify(memoryClickLog)
+    };
+
     window.parent.recording_stop(window.gameName, window.elapsedTime);
-    
-    alert(`Herzlichen Glückwunsch! Du hast gewonnen!\nBenötigte Zeit: ${window.elapsedTime} Sekunden.
-        \nDeine Daten werden nun abgespeichert...\nNach Klick auf "OK" geht's nach 5 Sekunden zum Puzzle-Spiel.`);
-    
+
+    alert(`Herzlichen Glückwunsch! Du hast gewonnen!\nBenötigte Zeit: ${window.elapsedTime} Sekunden.`);
     setTimeout(() => {
         window.location.href = "../games/puzzle.html";
     }, 5000);
 }
 
-// -------------------------------------
-// NEU: Gaze Guidance Funktionen für Paar-Hervorhebung
-// -------------------------------------
-function applyGazeGuidance(cards) {
-    const shuffledCards = [...cards];
-    shuffle(shuffledCards);
-    const guidanceCount = 2; // Wir wählen immer genau 2 Karten zu Beginn als Guidance
-    gazeGuidanceCards = shuffledCards.slice(0, guidanceCount);
-    gazeGuidanceCards.forEach(card => {
-        card.style.transform = `rotate(${getRandomRotation()}deg) scale(${getRandomScale()})`;
-        card.dataset.gazeGuidance = "true";         // Aktives Guidance-Flag
-        card.dataset.wasGazeGuidance = "true";        // Permanentes Guidance-Flag
-        totalGuidanceCount++; // NEU: Guidance-Zähler erhöhen
-    });
-}
+let gg_prob = 0.9;
 
-function getRandomRotation() {
-    return (Math.random() * 10 - 5).toFixed(2); // ±5 Grad, subtil
-}
-
-function getRandomScale() {
-    return (1.0 + Math.random() * 0.05).toFixed(2); // 1.0 bis 1.05
-}
-
-// NEU: Prüft, ob die Karte aktuell als Guidance aktiv ist
-function isGazeGuidanceCard(cardElement) {
-    return cardElement.dataset.gazeGuidance === "true";
-}
-
-function recordGazeGuidanceClick(gameName, moveNumber) {
-    console.log(`📌 Gaze Guidance Click erkannt: Spiel=${gameName}, Zug=${moveNumber}`);
-}
-
-// -------------------------------------
-// NEU: Sofortige Drehung des passenden Paares
-// -------------------------------------
-function rotatePairInstantly(selectedCard) {
-    const pairCard = [...document.querySelectorAll(".card")].find(card => 
-        card.dataset.card === selectedCard.dataset.card && card !== selectedCard
-    );
-    if (pairCard) {
-        // Setze Guidance-Flags, falls noch nicht permanent gesetzt
-        if (!pairCard.dataset.wasGazeGuidance) {
-            pairCard.dataset.gazeGuidance = "true";
-            pairCard.dataset.wasGazeGuidance = "true";
-            // totalGuidanceCount++; // Optional, falls du einen Zähler nutzt
-        }
-        pairCard.style.transform = `rotate(${getRandomRotation()}deg)`;
-        pairCard.dataset.guidanceModified = "true";
-        pairCard.guidanceTimeout = setTimeout(() => {
-            if (!pairCard.classList.contains("flipped")) {
-                pairCard.style.transform = "";
-                delete pairCard.dataset.gazeGuidance; // NEU: Aktives Guidance-Flag entfernen
-                delete pairCard.dataset.guidanceModified;
-            }
-        }, 3000); // 3 Sekunden warten, dann zurücksetzen
+function applyRotation(card) {
+    if (currentGazeGuidanceMethod === "rotation") {
+        const angle = (Math.random() * 3 + 2).toFixed(2); // ergibt 3-5 grad
+        card.style.transform = `rotate(${angle}deg)`;
+        //card.style.transform = `rotate(45deg)`;
     }
 }
 
+function applyContrast(card) {
+    if (currentGazeGuidanceMethod === "contrast") {
+        card.style.filter = "brightness(1.12)";
+        //card.style.filter = "brightness(1.5)";
+    }
+}
+
+function applyBorder(card) {
+    if (currentGazeGuidanceMethod === "border") {
+        card.style.border = "2px solid rgb(103, 103, 103)";
+        //card.style.border = "2px solid rgb(255, 0, 0)"
+    }
+}
+
+function applySize(card) {
+    if (currentGazeGuidanceMethod === "size") {
+        card.style.transform = `scale(1.04)`;
+        //card.style.transform = `scale(1.08)`;
+    }
+}
+
+function resetGuidanceVisuals(card) {
+    card.style.transform = "";
+    card.style.filter = "";
+    card.style.border = "";
+    delete card.dataset.gazeGuidance;
+}
+
+
+function getRandomRotation() {
+    return (Math.random() * 10 - 5).toFixed(2);
+}
+
+function getRandomScale() {
+    return (1.0 + Math.random() * 0.05).toFixed(2);
+}
 
 // -------------------------------------
-// Karten mischen
+function isGazeGuidanceCard(card) {
+    return card.dataset.gazeGuidance === "true";
+}
+
 // -------------------------------------
 function shuffle(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -177,146 +172,163 @@ function shuffle(array) {
     }
 }
 
-// -------------------------------------
-// Zufällige Position generieren
-// -------------------------------------
-function generateRandomPosition(maxWidth, maxHeight, cardSize) {
-    const x = Math.random() * (maxWidth - cardSize);
-    const y = Math.random() * (maxHeight - cardSize);
+function generateRandomPosition(maxW, maxH, size) {
+    const x = Math.random() * (maxW - size);
+    const y = Math.random() * (maxH - size);
     return { x, y };
 }
 
-// -------------------------------------
-// Überlappung prüfen
-// -------------------------------------
-function isOverlapping(newPos, positions, cardSize) {
-    return positions.some(pos => {
-        return (
-            newPos.x < pos.x + cardSize &&
-            newPos.x + cardSize > pos.x &&
-            newPos.y < pos.y + cardSize &&
-            newPos.y + cardSize > pos.y
-        );
-    });
+function isOverlapping(newPos, positions, size) {
+    return positions.some(pos => (
+        newPos.x < pos.x + size &&
+        newPos.x + size > pos.x &&
+        newPos.y < pos.y + size &&
+        newPos.y + size > pos.y
+    ));
 }
 
-// -------------------------------------
-// Spielfeld erstellen
 // -------------------------------------
 function startGame() {
     shuffle(cards);
     startTimer();
     window.parent.recording_start();
 
-    const memoryBoard = document.getElementById("memory-game");
-    const cardSize = 50; // Breite und Höhe der Karten
+    const board = document.getElementById("memory-game");
+    const size = 50;
     const positions = [];
 
     cards.forEach(card => {
-        const cardElement = document.createElement("div");
-        cardElement.classList.add("card");
+        const el = document.createElement("div");
+        el.classList.add("card");
 
-        const cardImage = document.createElement("img");
-        cardImage.src = card;
-        cardImage.style.visibility = "hidden";
-        cardElement.appendChild(cardImage);
+        const img = document.createElement("img");
+        img.src = card;
+        img.style.visibility = "hidden";
+        el.appendChild(img);
 
-        cardElement.dataset.card = card;
-        cardElement.addEventListener("click", function(e) { flipCard(e); });
+        el.dataset.card = card;
+        el.addEventListener("click", flipCard);
 
-        let position;
+        let pos;
         do {
-            position = generateRandomPosition(memoryBoard.offsetWidth, memoryBoard.offsetHeight, cardSize);
-        } while (isOverlapping(position, positions, cardSize));
+            pos = generateRandomPosition(board.offsetWidth, board.offsetHeight, size);
+        } while (isOverlapping(pos, positions, size));
 
-        cardElement.style.left = `${position.x}px`;
-        cardElement.style.top = `${position.y}px`;
-        positions.push(position);
+        el.style.left = `${pos.x}px`;
+        el.style.top = `${pos.y}px`;
+        positions.push(pos);
 
-        memoryBoard.appendChild(cardElement);
+        board.appendChild(el);
     });
-
-    // NEU: Falls du die alte Guidance-Funktion nicht nutzen willst, auskommentieren
-    // applyGazeGuidance(document.querySelectorAll(".card"));
 
     updateCounter();
     updatePairLength();
 }
 
 // -------------------------------------
-// Flip-Logik mit Klick-Recorder und Paar-Hervorhebung
-// -------------------------------------
 function flipCard(e) {
-    const clickedCard = e.currentTarget;
-
-    if (isCheckingMatch || openCards.length >= 2 || clickedCard.classList.contains("flipped")) {
-        return;
-    }
+    const card = e.currentTarget;
+    if (isCheckingMatch || openCards.length >= 2 || card.classList.contains("flipped")) return;
 
     clickNumber++;
-    const clickX = e.clientX;
-    const clickY = e.clientY;
-    const currentTimestamp = performance.now();
-    const isGG = isGazeGuidanceCard(clickedCard); // Aktuell aktiv
-    const wasGG = (clickedCard.dataset.wasGazeGuidance === "true"); // Dauerhaft gesetzt
 
-    console.log(`Karte ${clickedCard.dataset.card} angeklickt. wasGazeGuidance: ${wasGG}, isGazeGuidance: ${isGG}`);
+    const isGG = isGazeGuidanceCard(card);
+    const wasGG = card.dataset.wasGazeGuidance === "true";
+    const ts = performance.now();
 
+    
+
+    // 💡 Bei ungeraden Klicknummern (erster Klick eines Zugs) → "none"
+    // Bei geraden Klicknummern (zweiter Klick eines Paares) → currentGazeGuidanceMethod
     memoryClickLog.push({
         moveNumber: clickNumber,
-        x: clickX,
-        y: clickY,
-        wasGazeGuidance: wasGG,
-        isGazeGuidance: isGG,
-        timestamp: currentTimestamp
+        x: e.clientX,
+        y: e.clientY,
+        wasGazeGuidance: (clickNumber % 2 === 1) ? "user_move" : wasGG,
+        isGazeGuidance: (clickNumber % 2 === 1) ? "user_move" : isGG,
+        isTrueMove: (clickNumber %2 === 1) ? "user_move" :isTrueMove,  // Hier wird der neue Wert geloggt
+        timestamp: ts
     });
 
-    // NEU: Falls Guidance aktiv, löschen wir den aktuellen Guidance-Flag (behalten aber das permanente Flag)
-    if (clickedCard.dataset.gazeGuidance === "true") {
-        delete clickedCard.dataset.gazeGuidance;
+    if (isGG) {
+        delete card.dataset.gazeGuidance;
+        resetGuidanceVisuals(card);  // <--- NEU
     }
 
-    clickedCard.classList.add("flipped");
-    const img = clickedCard.querySelector("img");
-    img.style.visibility = "visible";
-    openCards.push(clickedCard);
+    card.classList.add("flipped");
+    card.querySelector("img").style.visibility = "visible";
+    openCards.push(card);
 
+    // Gaze Guidance nur beim ersten Klick des Paares (ungerade Zugzahl)
     if (openCards.length === 1) {
-        rotatePairInstantly(clickedCard);
+
+        if (Math.random() < gg_prob) {
+            const selectedCard = openCards[0];
+            const matchingCard = [...document.querySelectorAll(".card")]
+                .find(c =>
+                    c !== selectedCard &&
+                    c.dataset.card === selectedCard.dataset.card &&
+                    !c.classList.contains("flipped")
+                );
+
+                if (matchingCard) {
+                    const method = currentGazeGuidanceMethod;  // Hier nutzen wir die Methode aus der GazeGuidance-Konfiguration
+                    matchingCard.dataset.gazeGuidance = "true";
+                    matchingCard.dataset.wasGazeGuidance = "true";
+                    matchingCard.dataset.gazeGuidanceMethod = method;
+                
+                    switch (method) {
+                        case "rotation": applyRotation(matchingCard); break;
+                        case "contrast": applyContrast(matchingCard); break;
+                        case "border":   applyBorder(matchingCard); break;
+                        case "size":     applySize(matchingCard); break;
+                        case "none":     // Keine Veränderung
+                            break;
+                    }
+                
+                    // Debugging: Überprüfe die transform-Eigenschaft in der Konsole
+                    console.log(matchingCard.style.transform);  // Hier sehen wir die angewandte Transformation
+                
+                    setTimeout(() => {
+                        if (!matchingCard.classList.contains("flipped")) {
+                            resetGuidanceVisuals(matchingCard);
+                        }
+                    }, 3000);
+                }                
+        }
     }
 
     if (openCards.length === 2) {
         isCheckingMatch = true;
-        setTimeout(checkForMatch, 1000);
+        setTimeout(checkForMatch, 500);
     }
 }
 
-// -------------------------------------
-// Kartenvergleich
+
+
 // -------------------------------------
 function checkForMatch() {
-    const [card1, card2] = openCards;
-    if (card1.dataset.card === card2.dataset.card) {
+    const [c1, c2] = openCards;
+    if (c1.dataset.card === c2.dataset.card) {
         matchedPairs++;
         updateCounter();
         openCards = [];
-        if (matchedPairs === cards_pair_length) {
-            stopTimer();
-        }
+        isTrueMove = true;
+        if (matchedPairs === cards_pair_length) stopTimer();
     } else {
         setTimeout(() => {
-            card1.classList.remove("flipped");
-            card1.querySelector("img").style.visibility = "hidden";
-            card2.classList.remove("flipped");
-            card2.querySelector("img").style.visibility = "hidden";
+            c1.classList.remove("flipped");
+            c1.querySelector("img").style.visibility = "hidden";
+            c2.classList.remove("flipped");
+            c2.querySelector("img").style.visibility = "hidden";
             openCards = [];
-        }, 1000);
+            isTrueMove = false;
+        }, 800);
     }
     isCheckingMatch = false;
 }
 
-// -------------------------------------
-// Spiel starten
+
 // -------------------------------------
 startGame();
 updateCounter();

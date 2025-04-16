@@ -57,6 +57,9 @@ function calcAccuracy() {
       var past50 = webgazer.getStoredPoints();
       var precision_measurement = calculatePrecision(past50);
       var accuracyLabel = "<a>Accuracy | " + precision_measurement + "%</a>";
+      localStorage.setItem("calibration_accuracy", precision_measurement);
+      console.log("🎯 Accuracy gespeichert in localStorage:", precision_measurement);
+
       document.getElementById("Accuracy").innerHTML = accuracyLabel;
       swal({
         title: "Your accuracy measure is " + precision_measurement + "%",
@@ -121,6 +124,9 @@ function docLoad() {
 
 // Probanden-ID aus `localStorage` abrufen und global setzen
 window.addEventListener('load', function () {
+  // FULLSCREEN CHECK
+  checkFullscreenAndPrompt();
+
   docLoad();
 
   function checkProbandenID() {
@@ -181,24 +187,28 @@ window.recording_stop = function stopRecording(gameName) {
       return;
   }
 
-  // 🔥 Prüfen, ob `gameStats` in `window.parent` existiert
-  const gameStats = window.parent.gameStats || {};
+  
 
   console.log(`Blickdatenaufzeichnung beendet für ${gameName}. Gespeicherte Daten:`, gazeData);
   console.log("✅ gameStats erfolgreich von window geladen:", gameStats);
 
   if (gameName === "tictactoe") {
+    // 🔥 Prüfen, ob `gameStats` in `window.parent` existiert
+      const ttt_gameStats = window.parent.ttt_Stats || {};
       const gameStatsStringified = {
           table: "tictactoe_game",  // ✅ Korrektur: table ist jetzt gesetzt!
           probanden_id: window.probanden_id,
-          rundenanzahl: gameStats.rundenanzahl || 0,
-          siege: gameStats.siege || 0,
-          unentschieden: gameStats.unentschieden || 0,
-          verluste: gameStats.verluste || 0,
-          zuganzahl: gameStats.zuganzahl || "[]",
+          rundenanzahl: ttt_gameStats.rundenanzahl || 0,
+          siege: ttt_gameStats.siege || 0,
+          unentschieden: ttt_gameStats.unentschieden || 0,
+          verluste: ttt_gameStats.verluste || 0,
+          zuganzahl: ttt_gameStats.zuganzahl || "[]",
           gazeData: JSON.stringify(gazeData),  // ✅ Korrektur: Blickdaten richtig übergeben
-          rundenzeiten: gameStats.rundenzeiten || "[]",
-          rundenzeit_insgesamt: gameStats.rundenzeit_insgesamt || 0
+          rundenzeiten: ttt_gameStats.rundenzeiten || "[]",
+          rundenzeit_insgesamt: ttt_gameStats.rundenzeit_insgesamt || 0,
+           // NEU:
+          gazeGuidanceMoves: ttt_gameStats.gazeGuidanceMoves ,
+          gazeGuidanceMethod: ttt_gameStats.gazeGuidanceMethod
       };
 
       fetch('../../../gaze-guidance/db/save_game_data.php', {
@@ -214,37 +224,75 @@ window.recording_stop = function stopRecording(gameName) {
       })
       .catch(error => {
           console.error('❌ Fehler beim Speichern der Tic-Tac-Toe-Daten:', error);
-      });
-  } else {
-      const data = {
-          table: gameName + "_game",
-          gazeData: JSON.stringify(gazeData),
-          playTime: document.getElementById("iframe-container").contentWindow.elapsedTime || 
-                    document.getElementById("iframe-container").contentWindow.elapsedTime2,
-          probanden_id: window.probanden_id
-      };
+      }); 
 
-      fetch('../../../gaze-guidance/db/save_game_data.php', {
+      
+    } else if (gameName === "memory") {
+    const gameStats = window.parent.gameStats || {};
+    const data = {
+        table: "memory_game",
+        probanden_id: window.parent.probanden_id,
+        // Alte Felder
+        gazeData: JSON.stringify(gazeData),
+        playTime: document.getElementById("iframe-container").contentWindow.elapsedTime || 
+                  document.getElementById("iframe-container").contentWindow.elapsedTime2,
+        
+        // NEU: Gaze Guidance JSON
+        gazeGuidanceMethod: gameStats.gazeGuidanceMethod,
+        gazeGuidanceMoves: gameStats.gazeGuidanceMoves || "[]"
+    };
+
+        fetch('../../../gaze-guidance/db/save_game_data.php', {
           method: 'POST',
           headers: {
               'Content-Type': 'application/json'
           },
           body: JSON.stringify(data)
-      })
-      .then(response => response.text())
-      .then(result => {
-          console.log('✅ Daten erfolgreich gespeichert:', result);
-      })
-      .catch(error => {
-          console.error('❌ Fehler beim Speichern der Daten:', error);
-      });
-  }
+          })
+          .then(response => response.text())
+          .then(result => {
+              console.log('✅ Daten erfolgreich gespeichert:', result);
+          })
+          .catch(error => {
+              console.error('❌ Fehler beim Speichern der Daten:', error);
+          });
+
+        } else if (gameName === "puzzle") {
+          const puzzleStats = window.parent.puzzleStats || {};
+      
+          const data = {
+              table: "puzzle_game",
+              probanden_id: window.probanden_id,
+              gazeData: JSON.stringify(gazeData),
+              playTime: document.getElementById("iframe-container").contentWindow.elapsedTime2 || 0,
+              gazeGuidanceMethod: puzzleStats.gazeGuidanceMethod
+          };
+      
+          // Jetzt ist data deklariert, also ist das erlaubt:
+          if (puzzleStats.gazeGuidanceMoves) {
+              data.gazeGuidanceMoves = JSON.stringify(puzzleStats.gazeGuidanceMoves);
+          }
+      
+          fetch('../../../gaze-guidance/db/save_game_data.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(data)
+          })
+          .then(response => response.text())
+          .then(result => {
+              console.log('✅ Puzzle-Daten erfolgreich gespeichert:', result);
+          })
+          .catch(error => {
+              console.error('❌ Fehler beim Speichern der Puzzle-Daten:', error);
+          });
+      }
 };
 
 
 
-
 function ShowCalibrationPoint() {
+  localStorage.removeItem("calibration_accuracy");
+  console.log("🧹 Accuracy-Wert aus localStorage entfernt (neue Kalibrierung gestartet)");
   document.querySelectorAll('.Calibration').forEach((i) => {
     i.style.removeProperty('display');
   });
