@@ -1,10 +1,10 @@
 # Hier werden die git ignore dateien festgesetzt die
 # Wolfgang nicht brauchen wird für den Server.
 
-sonstiges/
+gaze-guidance/sonstiges/
 
-gaze_möglichkeiten.md
+gaze-guidance/gaze_möglichkeiten.md
 
-backup_ohneGG/
+gaze-guidance/backup_ohneGG/
 
 .vscode/

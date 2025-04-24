@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Spielauswahl - Gaze Guidance Studie</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src= "js/guidance-config.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Gaze Guidance Studie - Bachelorarbeit - Atilla Cetin</h1>
+    </header>
+
+    <main>
+        <h2>Willkommen zu meiner Gaze Guidance Studie!</h2>
+        
+        <p> In dieser Studie wirst du nach Eingabe deines Namens und Alters eine Reihe von Spielen spielen, <br> wo du dein Können unter Beweis stellen kannst.<br><br>
+            Du wirst nacheinander die Spiele </p>
+            <ul>
+                <li>Memory</li>
+                <li>Puzzle</li>
+                <li>Tic-Tac-Toe</li>
+            </ul> 
+            <p>spielen.</p>
+            <p>Wichtig ist dabei, die Augen stets auf dem Bildschirm zu haben und vorher die Kalibrierung durchgeführt zu haben.<br>
+            Nach jedem Spielabschluss wirst du automatisch zum nächsten Spiel geleitet.<br>
+            Viel Spaß beim Spielen! </p>
+        <br>
+        <h3>Bitte gib zuerst deinen Namen und dein Alter ein !</h3>
+        <form id="probandenForm">
+            <label for="vorname">Vorname:</label>
+            <input type="text" id="vorname" name="vorname" required> &nbsp; &nbsp; &nbsp; &nbsp;
+            
+            <label for="nachname">Nachname:</label>
+            <input type="text" id="nachname" name="nachname" required> &nbsp; &nbsp; &nbsp; &nbsp;
+            
+            <label for="alter_jahr">Alter:</label>
+            <input type="number" id="alter_jahr" name="alter_jahr" required min="1" max="120"> 
+            <br>
+            <button type="button" onclick="submitForm()">Probanden-Daten Speichern & Spiel Beginnen</button>
+        </form>
+        <p id="responseMessage"></p>
+        
+    <!--
+        <div class="spielauswahl">
+            <div class="box">
+                <a href="../gaze-guidance/games/memory.html">Memory</a>
+            </div>
+            <div class="box">
+                <a href="../gaze-guidance/games/puzzle.html">Puzzle</a>
+            </div>
+            <div class="box">
+                <a href="../gaze-guidance/games/tictactoe.html">Tic-Tac-Toe</a>
+            </div>
+        </div>
+    -->
+    </main>
+    <script>
+        window.addEventListener('load', function () {
+            console.log("🗑️ Startseite geladen – Probanden-ID wird zurückgesetzt.");
+            localStorage.removeItem('probanden_id');
+            localStorage.removeItem('gaze_guidance_config');
+        });
+        
+
+    function submitForm() {
+
+    // 🧪 Eingabewerte auslesen
+    const vorname = document.getElementById("vorname").value.trim();
+    const nachname = document.getElementById("nachname").value.trim();
+    const alter = document.getElementById("alter_jahr").value.trim();
+
+    // 🚫 Prüfen, ob ein Feld leer ist
+    if (!vorname || !nachname || !alter) {
+        alert("Bitte alle Felder ausfüllen, bevor du fortfährst! Es darf nichts leer sein");
+        return; // ⛔️ Formular nicht absenden
+    }
+
+
+    const formData = new FormData(document.getElementById('probandenForm'));
+
+    const accuracy = localStorage.getItem('calibration_accuracy');
+
+    // Bildschirmauflösung hinzufügen
+    const screenWidth = window.screen.width;
+    const screenHeight = window.screen.height;
+    const resolution = `${screenWidth}x${screenHeight}`;
+    formData.append('screen_resolution', resolution);  // 🆕
+    formData.append('accuracy', accuracy);
+    console.log(accuracy);
+
+    fetch('db/insert_proband.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json()) // Antwort als JSON verarbeiten
+    .then(data => {
+        if (data.status === "success") {
+            localStorage.setItem('probanden_id', data.probanden_id);  
+            console.log(`✅ Neue Probanden-ID gespeichert: ${data.probanden_id}`);
+
+
+            setTimeout(() => {
+                const storedId = localStorage.getItem('probanden_id');
+                if (storedId) {
+                    window.location.href = '../gaze-guidance/games/memory.html';
+                } else {
+                    console.error("❌ Fehler: Neue Probanden-ID konnte nicht gespeichert werden!");
+                }
+            }, 500);  // Warte 500ms, um sicherzustellen, dass die ID gespeichert wird
+        } else {
+            document.getElementById('responseMessage').innerHTML = "Fehler: " + data.message;
+        }
+    })
+    .catch(error => {
+        console.error('❌ Fehler:', error);
+    });
+}
+
+    </script>
+</body>
+</html>
