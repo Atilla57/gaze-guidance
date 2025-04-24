@@ -458,7 +458,7 @@ function resetGuidanceVisuals(cell) {
         if (board.flat().every(c => c !== "")) {
             unentschieden++;
             updateScore();
-            alert("Unentschieden! Neues Spiel in 3 Sekunden...");
+            alert("Unentschieden! Neues Spiel in 3 Sekunden...\nKlicke bitte auf OK");
             setTimeout(() => {
                 roundCounter++;
                 initializeGame();
@@ -582,6 +582,19 @@ function resetGuidanceVisuals(cell) {
     if (playerScore === 5 || computerScore === 5) {
         setTimeout(() => {
             alert(`Spiel beendet! Gewinner: ${playerScore === 5 ? "Spieler X" : "Computer O"}`);
+            swal({
+                title: "Du hast es geschafft!",
+                text: `Danke für das Mitmachen in meiner Studie!
+                Du wirst jetzt wieder auf die Startseite geleitet und kannst wenn du willst eine weitere Runde spielen.
+                Sofern du direkt weitermachen solltest, benötigt es keine erneute Kalibrierung.
+                Falls du zu einem späteren Zeitpunkt einschaltest, starte die Kalibrierung bitte erneut.
+                Bis dann!`,
+                button: {
+                  text: "Fertig - Zurück zur Startseite",
+                  closeModal: true
+                }
+              })
+            .then(() => {
             
             window.parent.ttt_Stats = {
                 table: "tictactoe_game",
@@ -612,7 +625,8 @@ function resetGuidanceVisuals(cell) {
                     window.deleteGazeGuidanceConfig(); // Löscht den localStorage-Wert, sodass beim nächsten Nutzer neue Werte gesetzt werden
                     console.log("Config wurde zurückgesetzt?? -->" + localStorage.getItem("gaze_guidance_config"));
                 }, 3000);   
-        }, 100);
+        })
+    }, 100);
     } 
     else {
         setTimeout(() => {
